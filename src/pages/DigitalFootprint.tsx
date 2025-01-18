@@ -82,6 +82,10 @@ function DigitalFootprint() {
   const [isLoadingRecommendations, setIsLoadingRecommendations] =
     useState(false);
 
+  const NODE_SPACING = 250; // Space between nodes
+  const BASE_Y = 150; // Base vertical position
+  const Y_OFFSET = 50; // Maximum height difference for the arc
+
   // Function to get recommendations from Gemini
   const getRecommendations = async (data: any) => {
     setIsLoadingRecommendations(true);
@@ -116,70 +120,29 @@ function DigitalFootprint() {
   async function fetchData() {
     setIsLoading(true);
     try {
-      // Create multiple fetch promises
-      const fetchPromises = [
-        fetch(``, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query: targetInput, // Example payload; replace with actual input data
-          }),
+      // Single API request
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/footprint`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: targetInput, // Example payload; replace with actual input data
         }),
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/footprint`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query: targetInput, // Example payload; replace with actual input data
-          }),
-        }),
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/footprint`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query: targetInput, // Example payload; replace with actual input data
-          }),
-        }),
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/footprint`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query: targetInput, // Example payload; replace with actual input data
-          }),
-        }),
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/footprint`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query: targetInput, // Example payload; replace with actual input data
-          }),
-        }),
-      ];
-
-      // Wait for the first response to complete
-      const fastestResponse = await Promise.race(fetchPromises);
-
-      if (!fastestResponse.ok) {
+      });
+  
+      if (!response.ok) {
         throw new Error("Failed to fetch data");
       }
-
-      // Parse the JSON from the first completed response
-      const data = await fastestResponse.json();
-
+  
+      // Parse the JSON from the response
+      const data = await response.json();
+  
       // Process and map the data to nodes and edges
       const { nodes, edges } = mapApiResponseToGraph(data);
       setNodes(nodes);
       setEdges(edges);
-
+  
       // Call additional functions if needed
       await getRecommendations(data);
     } catch (error) {
@@ -188,7 +151,7 @@ function DigitalFootprint() {
       setIsLoading(false);
     }
   }
-
+  
   const startScan = () => {
     if (!targetInput) {
       alert("Please enter a target domain, IP, or email");
@@ -347,7 +310,8 @@ function DigitalFootprint() {
             },
           },
           position: { x: -200, y: 200 },
-          className: "bg-green-500 text-white rounded-lg p-2 shadow-lg",
+          className: `${data.email_scan.risk[0].risk_label === 'high' ? 'bg-red-500' :
+            data.email_scan.risk[0].risk_label === 'low' ? 'bg-green-500' : 'bg-yellow-500'} text-white rounded-lg p-2 shadow-lg`,
         });
 
         // Create edges from the user node to each sub-node
@@ -374,7 +338,7 @@ function DigitalFootprint() {
       }
     } else if (data.phone_scan) {
       const phoneScanNodeId = "phone-scan-node";
-      if (data.phone_scan.phone_no === false) {
+      if (data.phone_scan.phone_no == false) {
         nodes.push({
           id: phoneScanNodeId,
           data: {
@@ -529,13 +493,26 @@ function DigitalFootprint() {
       console.log(data);
       data.username_scan.forEach((entry, index) => {
         const { site, url } = entry;
-        const iconUrl = getIconForSite(site); // A function to get the icon URL based on the site
-        // Generate unique node ID for each site
+        const iconUrl = getIconForSite(site);
         const nodeId = `username-${userNodeId}-${index}`;
         console.log(site, url, iconUrl, nodeId, index);
         const totalNodes = data.username_scan.length;
-
-        // Create the individual node
+    
+        // Constants for layout
+        const NODE_SPACING = 250; // Space between nodes
+        const BASE_Y = 150; // Base vertical position
+        const Y_OFFSET = 50; // Maximum height difference for the arc
+    
+        // Calculate horizontal position
+        const START_X = -(((totalNodes - 1) * NODE_SPACING) / 2);
+        const currentX = START_X + (index * NODE_SPACING);
+    
+        // Calculate vertical position using a parabolic function
+        // This creates an arc effect where edges are higher than the center
+        const normalizedPosition = (index / (totalNodes - 1)) * 2 - 1; // Range from -1 to 1
+        const yOffset = Y_OFFSET * (normalizedPosition * normalizedPosition); // Parabolic function
+        const currentY = BASE_Y - yOffset; // Subtract offset to move nodes up
+    
         usernameNodes.push({
           id: nodeId,
           data: {
@@ -550,25 +527,23 @@ function DigitalFootprint() {
             icon: iconUrl,
           },
           position: {
-            // Center nodes by subtracting half the total width
-            x: 220 * (index - (totalNodes - 1) / 2),
-            y: 150 + (index % 2) * 10,
+            x: currentX,
+            y: currentY,
           },
           className:
             "bg-[#f87171] text-white rounded-lg p-2 shadow-lg flex items-center space-x-2",
         });
-
+    
         nodes.push(...usernameNodes);
-
+    
         edges.push({
           id: `edge-${userNodeId}-${nodeId}`,
-          source: userNodeId, // Parent node
-          target: nodeId, // Current username node
-          animated: true, // Optionally animate the edge
+          source: userNodeId,
+          target: nodeId,
+          animated: true,
         });
       });
-    } else {
-      // Handle the case where no username scan data is found
+    } else if (data.username_scan && data.username_scan.length === 0){
       console.log(data);
       usernameNodes.push({
         id: `${userNodeId}-empty`,
@@ -576,15 +551,15 @@ function DigitalFootprint() {
           label: "No Username Data Found",
           type: "username-empty",
           details: { value: "No results found" },
-          icon: "fas fa-exclamation-circle", // Icon indicating no data
+          icon: "fas fa-exclamation-circle",
         },
-        position: { x: 100, y: 100 },
+        position: { x: NODE_SPACING, y: BASE_Y },
         className:
           "bg-gray-500 text-black rounded-lg p-2 shadow-lg flex items-center space-x-2",
       });
-
+    
       nodes.push(...usernameNodes);
-
+    
       edges.push({
         id: `edge-${userNodeId}-empty`,
         source: userNodeId,

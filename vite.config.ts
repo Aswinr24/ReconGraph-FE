@@ -7,4 +7,13 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  server: {
+    proxy: {
+      "/proxy": {
+        target: "http://aswinr24-tech.me",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/proxy/, '')
+      },
+    },
+  }
 });
