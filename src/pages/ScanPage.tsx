@@ -84,7 +84,7 @@ function ScanPage() {
   const getRecommendations = async (data: any) => {
     setIsLoadingRecommendations(true);
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
       let prompt =
         "Based on the following digital footprint data, provide specific security recommendations and privacy advice in a concise manner. ";
