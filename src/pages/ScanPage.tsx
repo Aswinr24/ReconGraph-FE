@@ -168,7 +168,7 @@ function ScanPage() {
 
   const startScan = () => {
     if (!targetInput) {
-      alert("Please enter a target domain, IP, or email");
+      alert("Please enter a target domain or IP");
       return;
     }
     fetchData();
@@ -450,7 +450,7 @@ function ScanPage() {
                 htmlFor="target"
                 className="block text-sm font-medium text-gray-700 dark:text-white"
               >
-                Target Domain, IP, or Email
+                Target Domain or IP
               </label>
               <div className="mt-1 flex rounded-md shadow-sm">
                 <input
