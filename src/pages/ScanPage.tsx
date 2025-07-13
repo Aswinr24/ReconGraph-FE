@@ -168,26 +168,30 @@ function ScanPage() {
 
   const startScan = () => {
     if (!targetInput) {
-      alert("Please enter a target domain or IP");
+      alert("Please enter a target domain, IP, or email");
       return;
     }
-    fetchData();
-    setIsScanning(true);
+
     setProgress(0);
+    setIsScanning(true);
     setScanComplete(false);
 
-    // Simulate scan progress
+    let progress = 0;
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsScanning(false);
-          setScanComplete(true);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 500);
+      progress += 5;
+      if (progress >= 90) {
+        clearInterval(interval); // Wait for fetch to complete
+      } else {
+        setProgress(progress);
+      }
+    }, 300);
+
+    fetchData().then(() => {
+      clearInterval(interval);
+      setProgress(100);
+      setIsScanning(false);
+      setScanComplete(true);
+    });
   };
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {

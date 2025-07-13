@@ -13,6 +13,7 @@ import {
   Play,
   Clock,
   X,
+  AlertCircle,
   ChevronRight,
   ExternalLink,
 } from "lucide-react";
@@ -99,8 +100,6 @@ function FileAnalysisPage() {
   };
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [errorMessage, setErrorMessage] = useState("");
-
   // ...existing code...
   const [filteredTimeline, setFilteredTimeline] = useState<any[]>([]);
 
@@ -124,18 +123,21 @@ function FileAnalysisPage() {
   // ...existing code...
 
   const groupedTimeline = filteredTimeline.reduce((acc, event) => {
-    const { category } = event;
+    const { category, techniqueName, url, description } = event;
+    
     if (!acc[category]) {
       acc[category] = [];
     }
-    // Remove the 'category' property from the event and add the rest as a technique
-    const techniques = Object.entries(event)
-      .filter(([key]) => key !== "category")
-      .map(([techniqueName, url]) => ({ techniqueName, url }));
-
-    acc[category] = [...acc[category], ...techniques];
+    
+    acc[category].push({ 
+      techniqueName, 
+      url, 
+      description 
+    });
+    
     return acc;
   }, {});
+
   // ...existing code...
 
   // Automatically progress the steps every 2 seconds
@@ -157,11 +159,71 @@ function FileAnalysisPage() {
         });
       }, 2000); // 2 seconds interval for step progression
       console.log(filteredTimeline, "hey");
+      console.log(groupedTimeline, "groupedTimeline");
       return () => clearInterval(interval); // Cleanup interval on component unmount
     } else if (results?.error) {
       setErrorMessage(results.error); // Display error message
     }
   }, [analysisComplete, results, currentStep, filteredTimeline]);
+
+  const [errorMessage, setErrorMessage] = useState("");
+const [filteredResults, setFilteredResults] = useState<any>({});
+
+useEffect(() => {
+  if (results && !results.error) {
+    const filtered = Object.entries(results)
+      .reduce((acc, [category, events]) => {
+        const filteredEvents = events.filter((event: any) =>
+          Object.values(event)
+            .join(" ")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase())
+        );
+        
+        if (filteredEvents.length > 0) {
+          acc[category] = filteredEvents;
+        }
+        
+        return acc;
+      }, {});
+    
+    setFilteredResults(filtered);
+  } else {
+    setFilteredResults({});
+  }
+}, [results, searchQuery]);
+
+// Category icon mapping
+const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case "Defense Evasion":
+      return <Shield className="h-5 w-5" />;
+    case "Discovery":
+      return <Search className="h-5 w-5" />;
+    case "Execution":
+      return <Play className="h-5 w-5" />;
+    case "Persistence":
+      return <Clock className="h-5 w-5" />;
+    default:
+      return <AlertCircle className="h-5 w-5" />;
+  }
+};
+
+// Category color mapping
+const getCategoryColor = (category: string) => {
+  switch (category) {
+    case "Defense Evasion":
+      return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200";
+    case "Discovery":
+      return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200";
+    case "Execution":
+      return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200";
+    case "Persistence":
+      return "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900 dark:text-gray-200";
+  }
+};
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -175,7 +237,7 @@ function FileAnalysisPage() {
         </p>
       </div>
       {/* File Upload Section */}
-      <div className="bg-white dark:bg-zinc-900 dark:text-white  shadow sm:rounded-lg mb-8">
+      <div className="bg-stone-100 dark:bg-zinc-900 dark:text-white  shadow sm:rounded-lg mb-8">
         <div className="px-4 py-5 sm:p-6">
           <div className="max-w-xl mx-auto">
             <label
@@ -204,7 +266,7 @@ function FileAnalysisPage() {
           </div>
         </div>
       </div>
-      Analysis Results
+    
       {isAnalyzing && (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
@@ -212,225 +274,147 @@ function FileAnalysisPage() {
         </div>
       )}
       {analysisComplete &&
-        results &&
-        (results?.error ? (
-          <div className="text-center text-red-600">
-            <p>{errorMessage}</p>
-          </div>
-        ) : (
-          <div className="bg-white dark:bg-zinc-900 shadow sm:rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              {/* File Summary */}
-              <div className="mb-8 border-b pb-6">
-                <div className="flex justify-between items-start">
+      results &&
+      (results?.error ? (
+        <div className="text-center text-red-600">
+          <p>{errorMessage}</p>
+        </div>
+      ) : (
+        <div className="bg-stone-100 dark:bg-zinc-900 shadow sm:rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            {/* File Summary */}
+            <div className="mb-8 border-b pb-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-200">
+                    Analysis Summary
+                  </h2>
+                  <div className="mt-4 grid grid-cols-2 gap-4 gap-x-16">
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-200">
-                      Analysis Summary
-                    </h2>
-                    <div className="mt-4 grid grid-cols-2 gap-4 gap-x-16">
-                      <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-200">
-                          File Name
-                        </p>
-                        <p className="mt-1 text-sm text-gray-900 dark:text-gray-200">
-                          {file?.name.length > 20
-                            ? `${file?.name.slice(0, 20)}....${file?.name.slice(
-                                -20
-                              )}`
-                            : file?.name}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-200">
-                          File Size
-                        </p>
-                        <p className="mt-1 text-sm text-gray-900 dark:text-gray-200">
-                          {file
-                            ? (file.size / (1024 * 1024)).toFixed(2)
-                            : "N/A"}{" "}
-                          MB
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-200">
-                          Type
-                        </p>
-                        <p className="mt-1 text-sm text-gray-900 dark:text-gray-200">
-                          {file?.type || "Unknown Type"}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-200">
-                          Analysis Date
-                        </p>
-                        <p className="mt-1 text-sm text-gray-900 dark:text-gray-200">
-                          {new Date().toLocaleString()}
-                        </p>
-                      </div>
+                      <p className="text-sm text-gray-500 dark:text-gray-200">File Name</p>
+                      <p className="mt-1 text-sm text-gray-900 dark:text-gray-200 block sm:hidden">
+                        {file?.name.length > 10
+                          ? `${file?.name.slice(0, 10)}...`
+                          : file?.name}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-900 dark:text-gray-200 hidden sm:block">
+                        {file?.name.length > 20
+                          ? `${file?.name.slice(0, 20)}....${file?.name.slice(-20)}`
+                          : file?.name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-200">
+                        File Size
+                      </p>
+                      <p className="mt-1 text-sm text-gray-900 dark:text-gray-200">
+                        {file ? (file.size / (1024 * 1024)).toFixed(2) : "N/A"} MB
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-200">
+                        Type
+                      </p>
+                      <p className="mt-1 text-sm text-gray-900 dark:text-gray-200">
+                        {file?.type || "Unknown Type"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-200">
+                        Analysis Date
+                      </p>
+                      <p className="mt-1 text-sm text-gray-900 dark:text-gray-200">
+                        {new Date().toLocaleString()}
+                      </p>
                     </div>
                   </div>
-                  <button
-                    onClick={handleExport}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export Report
-                  </button>
                 </div>
+                <button
+                  onClick={handleExport}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Report
+                </button>
               </div>
+            </div>
 
-              {/* Horizontal Progress Timeline */}
-              <div className="my-8">
-                <div className="relative flex items-center">
-                  {/* Static Background Bar */}
-                  <div className="absolute top-4 left-0 w-full h-1 bg-gray-200 rounded-full"></div>
-
-                  {/* Dynamic Progress Bar */}
-                  <div
-                    className="absolute top-4 left-0 h-1 bg-indigo-600 rounded-full overflow-y-hidden overflow-x-hidden overflow-hidden max-w-full transition-all duration-500"
-                    style={{
-                      width: `${
-                        ((currentStep * 2) / (filteredTimeline.length - 1)) *
-                        100
-                      }%`,
-                    }}
-                  ></div>
-                  {/* Timeline Steps */}
-                  <div className="relative flex justify-between w-full">
-                    {Object.entries(groupedTimeline).map(
-                      ([category, techniques], categoryIndex) => (
-                        <div
-                          key={category}
-                          className="flex flex-col items-center"
-                        >
-                          {/* Step Indicator */}
-                          <div
-                            className={`flex items-center justify-center w-8 h-8 text-sm font-semibold rounded-full ${
-                              categoryIndex <= currentStep
-                                ? "bg-indigo-600 text-white dark:bg-indigo-900"
-                                : "bg-gray-300 text-gray-600 dark:text-gray-200"
-                            }`}
-                          >
-                            {/* Icons for Each Step */}
-                            {category === "Defense Evasion" && (
-                              <Shield className="h-5 w-5 text-white" />
-                            )}
-                            {category === "Discovery" && (
-                              <Search className="h-5 w-5 text-white" />
-                            )}
-                            {category === "Execution" && (
-                              <Play className="h-5 w-5 text-white" />
-                            )}
-                            {category === "Persistence" && (
-                              <Clock className="h-5 w-5 text-white" />
-                            )}
-                          </div>
-                          {/* Step Label */}
-                          <p
-                            className={`mt-2 text-sm ${
-                              categoryIndex <= currentStep
-                                ? "text-indigo-600"
-                                : "text-gray-500"
-                            }`}
-                          >
-                            {category}
-                          </p>
-                          {/* Step Link */}
-                          {/* <div className="min-w-0 text-center flex-1 pt-1.5 flex flex-col space-y-2">
-                            {techniques.map((technique, idx) => (
-                              <div key={idx}>
+            {/* Results Grid */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200">
+                Analysis Results
+              </h3>
+              
+              {Object.keys(filteredResults).length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  No results found matching your search criteria.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Object.entries(filteredResults).map(([category, techniques]) => (
+                    <div
+                      key={category}
+                      className={`border rounded-lg p-6 transition-all duration-200 hover:shadow-lg ${getCategoryColor(category)}`}
+                    >
+                      {/* Category Header */}
+                      <div className="flex items-center space-x-3 mb-4">
+                        {getCategoryIcon(category)}
+                        <h4 className="text-lg font-semibold">{category}</h4>
+                      </div>
+                      
+                      {/* Techniques Count */}
+                      <div className="mb-4">
+                        <span className="text-sm font-medium">
+                          {techniques.length} technique{techniques.length !== 1 ? 's' : ''} found
+                        </span>
+                      </div>
+                      
+                      {/* Techniques List */}
+                      <div className="space-y-3">
+                        {techniques.slice(0, 3).map((technique: any, idx: number) => (
+                          <div key={idx} className="border-t pt-3 first:border-t-0 first:pt-0">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h5 className="font-medium text-sm leading-tight">
+                                  {technique.techniqueName}
+                                </h5>
+                                {technique.description && (
+                                  <p className="text-xs mt-1 opacity-80 line-clamp-2">
+                                    {technique.description}
+                                  </p>
+                                )}
+                              </div>
+                              {technique.url && (
                                 <a
                                   href={technique.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-indigo-600 hover:text-indigo-800 text-sm"
+                                  className="ml-2 text-xs hover:underline flex-shrink-0"
                                 >
-                                  {technique.techniqueName}
+                                  <ExternalLink className="h-3 w-3" />
                                 </a>
-                              </div>
-                            ))}
-                          </div> */}
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {techniques.length > 3 && (
                           <button
-                            onClick={() => setSelectedEvent(category)} // Open the corresponding step
-                            className="text-indigo-600 hover:text-indigo-800 text-sm mt-1"
+                            onClick={() => setSelectedEvent(category)}
+                            className="text-sm font-medium hover:underline mt-2"
                           >
-                            View Details
+                            View all {techniques.length} techniques →
                           </button>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      {/* Details Modal */}
-      {selectedEvent && (
-        <div
-          className="fixed inset-0 overflow-y-auto"
-          aria-labelledby="modal-title"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div
-              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-              aria-hidden="true"
-            ></div>
-            <span
-              className="hidden sm:inline-block sm:align-middle sm:h-screen"
-              aria-hidden="true"
-            >
-              &#8203;
-            </span>
-            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-              <div className="absolute top-0 right-0 pt-4 pr-4">
-                <button
-                  type="button"
-                  className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  onClick={() => setSelectedEvent(null)}
-                >
-                  <span className="sr-only">Close</span>
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-              <div>
-                <div className="mt-3 sm:mt-5">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
-                    Techniques in {selectedEvent}
-                  </h3>
-                  <div className="mt-4 space-y-6">
-                    {groupedTimeline[selectedEvent]?.map((technique, idx) => (
-                      <div key={idx}>
-                        <h4 className="text-sm font-medium text-gray-500">
-                          {technique.techniqueName}
-                        </h4>
-                        <div className="mt-1 space-y-1">
-                          <p className="text-sm text-gray-900">
-                            {/* Add descriptions, APIs, strings, etc., here */}
-                            {technique.description}
-                          </p>
-                          <a
-                            href={technique.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-500"
-                          >
-                            View in MITRE ATT&CK
-                            <ExternalLink className="ml-1 h-4 w-4" />
-                          </a>
-                        </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
-      )}
+      ))}
     </div>
   );
 }
