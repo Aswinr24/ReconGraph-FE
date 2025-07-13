@@ -1,7 +1,9 @@
 import React from "react";
 import { Shield, Building2, Network } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 
 function HomePage() {
+  const navigate = useNavigate();
   return (
     <div className="bg-white dark:bg-gray-900">
       {/* Hero Section */}
@@ -41,8 +43,7 @@ function HomePage() {
           <div className="mt-20">
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {/* Feature 1: Target Scanner */}
-              <div className="group cursor-pointer"
-              onClick={() => window.location.href = '/scan'}>
+              <div className="group cursor-pointer" onClick={() => navigate('/scan')}>
                 <div className="bg-white dark:bg-gray-700 rounded-xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-indigo-500 hover:-translate-y-2">
                   <div className="flex items-center justify-center w-16 h-16 mx-auto bg-indigo-500 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                     <Shield className="h-8 w-8 text-white" />
@@ -62,7 +63,7 @@ function HomePage() {
 
               {/* Feature 2: Digital Footprint Recon */}
               <div className="group cursor-pointer"
-              onClick={() => window.location.href = '/footprint'}>
+              onClick={() => navigate('/footprint')}>
                 <div className="bg-white dark:bg-gray-700 rounded-xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-purple-500 hover:-translate-y-2">
                   <div className="flex items-center justify-center w-16 h-16 mx-auto bg-purple-500 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                     <Building2 className="h-8 w-8 text-white" />
@@ -81,8 +82,8 @@ function HomePage() {
               </div>
 
               {/* Feature 3: File Analyzer */}
-              <div className="group cursor-pointer"
-              onClick={() => window.location.href = '/analyze'}>
+              <div className="group cursor-pointer" onClick={() => navigate('/analyze')}
+              >
                 <div className="bg-white dark:bg-gray-700 rounded-xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-blue-500 hover:-translate-y-2">
                   <div className="flex items-center justify-center w-16 h-16 mx-auto bg-blue-500 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                     <Network className="h-8 w-8 text-white" />
