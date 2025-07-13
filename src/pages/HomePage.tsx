@@ -20,7 +20,7 @@ function HomePage() {
               Scan targets, trace digital footprints, and dissect suspicious files — all in one place. Free, powerful, and built for the hacker in you.
             </p>
             <div className="mt-12 flex justify-center gap-x-6">
-              <button className="rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-lg hover:bg-gray-50 transition-colors duration-200">
+              <button className="rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-lg hover:bg-gray-50 transition-colors duration-200" onClick={() => navigate('/scan')}>
                 Get Started
               </button>
             </div>
